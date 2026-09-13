@@ -1302,6 +1302,26 @@ function getPointerPosition(event) {
   };
 }
 
+function getActiveCharges(excludedCharge) {
+
+  const activeCharges = [charge1, charge2];
+
+  if (charge3Active) {
+    activeCharges.push(charge3);
+  }
+
+  return activeCharges.filter(charge => charge !== excludedCharge);
+}
+
+function canMoveCharge(charge, nextX, nextY) {
+
+  const minimumDistance = radius * 2;
+
+  return getActiveCharges(charge).every(otherCharge => {
+    return Math.hypot(nextX - otherCharge.x, nextY - otherCharge.y) >= minimumDistance;
+  });
+}
+
 canvas.addEventListener("pointerdown", event => {
 
   const pos = getPointerPosition(event);
@@ -1388,59 +1408,71 @@ canvas.addEventListener("pointermove", event => {
 
   if (dragging === "q1") {
 
-    charge1.x = Math.max(
+    const nextX = Math.max(
       radius,
       Math.min(
         canvas.width - radius,
         pos.x - pointerOffsetX
       )
     );
-
-    charge1.y = Math.max(
+    const nextY = Math.max(
       radius,
       Math.min(
         canvas.height - radius,
         pos.y - pointerOffsetY
       )
     );
+
+    if (canMoveCharge(charge1, nextX, nextY)) {
+      charge1.x = nextX;
+      charge1.y = nextY;
+    }
   }
 
   if (dragging === "q2") {
 
-    charge2.x = Math.max(
+    const nextX = Math.max(
       radius,
       Math.min(
         canvas.width - radius,
         pos.x - pointerOffsetX
       )
     );
-
-    charge2.y = Math.max(
+    const nextY = Math.max(
       radius,
       Math.min(
         canvas.height - radius,
         pos.y - pointerOffsetY
       )
     );
+
+    if (canMoveCharge(charge2, nextX, nextY)) {
+      charge2.x = nextX;
+      charge2.y = nextY;
+    }
   }
 
   if (dragging === "q3") {
 
-    charge3.x = Math.max(
+    const nextX = Math.max(
       radius,
       Math.min(
         canvas.width - radius,
         pos.x - pointerOffsetX
       )
     );
-
-    charge3.y = Math.max(
+    const nextY = Math.max(
       radius,
       Math.min(
         canvas.height - radius,
         pos.y - pointerOffsetY
       )
     );
+
+    if (canMoveCharge(charge3, nextX, nextY)) {
+      charge3.x = nextX;
+      charge3.y = nextY;
+    }
   }
 
   if (dragging === "ruler") {
