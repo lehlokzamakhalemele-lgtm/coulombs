@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Intro</title>
+  <style>
+    :root {
+      color: #f8fafc;
+      background: #071018;
+      font-family: Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background: radial-gradient(circle at top, #183047, #071018 62%);
+    }
+
+    main {
+      width: min(620px, 100%);
+      padding: clamp(28px, 7vw, 64px);
+      text-align: center;
+      border: 1px solid #38516a;
+      border-radius: 16px;
+      background: #0d1a27;
+      box-shadow: 0 20px 55px #0008;
+    }
+
+    h1 {
+      margin: 0 0 20px;
+      font-size: clamp(2rem, 7vw, 3.5rem);
+      text-transform: capitalize;
+    }
+
+    p {
+      margin: 0 auto 30px;
+      color: #c6d3df;
+      font-size: clamp(1rem, 2.5vw, 1.2rem);
+      line-height: 1.6;
+    }
+
+    a {
+      display: inline-block;
+      padding: 13px 22px;
+      border-radius: 8px;
+      color: #071018;
+      background: #55d6e8;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    a:hover,
+    a:focus-visible {
+      background: #8ce8f3;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Intro</h1>
+    <p>Introduction to Coulomb's law.</p>
+    <a href="index.html">Open Coulomb's Law Simulation</a>
+  </main>
+</body>
+</html>

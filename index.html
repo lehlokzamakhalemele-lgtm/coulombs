@@ -1,0 +1,1481 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coulomb's Law </title>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #111;
+  color: white;
+  font-family: Arial, sans-serif;
+  overflow-x: hidden;
+}
+
+#app {
+  max-width: 1100px;
+  margin: auto;
+  background: #111;
+}
+
+.header {
+  padding: 15px 20px;
+  border-bottom: 1px solid #333;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.header h1 {
+  font-size: 20px;
+  font-weight: normal;
+  margin: 0;
+}
+
+.header span {
+  font-size: 12px;
+  color: #aaa;
+}
+
+#simulation {
+  position: relative;
+  background: #000;
+  width: 100%;
+}
+
+#scene {
+  display: block;
+  width: 100%;
+  height: auto;
+  touch-action: none;
+  cursor: default;
+}
+
+.controls {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 15px;
+  padding: 20px 12px 10px;
+}
+
+.control-box {
+  background: #e8e8e8;
+  color: #222;
+  border-radius: 9px;
+  padding: 12px;
+  width: 180px;
+  min-height: 120px;
+}
+
+.control-box.optional {
+  display: none;
+}
+
+.control-box.optional.active {
+  display: block;
+}
+
+.control-box h3 {
+  text-align: center;
+  font-size: 14px;
+  font-weight: normal;
+  margin: 0 0 10px;
+}
+
+.amount {
+  text-align: center;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.control-box input[type="range"] {
+  width: 100%;
+  accent-color: #555;
+}
+
+.range-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: #555;
+}
+
+.charge-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 7px;
+  align-items: center;
+}
+
+.charge-buttons button {
+  width: 28px;
+  height: 28px;
+  border: 1px solid #aaa;
+  border-radius: 5px;
+  background: white;
+  cursor: pointer;
+  font-size: 17px;
+}
+
+.check-box {
+  width: 180px;
+  min-height: 120px;
+  padding: 13px;
+  background: #e8e8e8;
+  color: #222;
+  border-radius: 9px;
+  font-size: 13px;
+}
+
+.check-box label {
+  display: block;
+  margin-bottom: 14px;
+  cursor: pointer;
+}
+
+.check-box input {
+  width: 17px;
+  height: 17px;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+}
+
+.actions button {
+  border: 0;
+  border-radius: 7px;
+  padding: 12px 18px;
+  font-weight: bold;
+  cursor: pointer;
+  background: #ffad42;
+  color: #111;
+}
+
+.actions button.secondary {
+  background: #ddd;
+}
+
+.actions button:hover {
+  opacity: 0.85;
+}
+
+.measurement {
+  margin: 10px 15px 20px;
+  padding: 15px;
+  background: #202020;
+  border: 1px solid #444;
+  border-radius: 9px;
+}
+
+.measurement h2 {
+  font-size: 17px;
+  margin: 0 0 10px;
+  font-weight: normal;
+}
+
+.measurement p {
+  margin: 6px 0;
+  color: #ddd;
+  font-size: 14px;
+}
+
+.measurement strong {
+  color: #ffcc80;
+}
+
+.bottom {
+  border-top: 1px solid #333;
+  padding: 12px 16px;
+  color: #999;
+  font-size: 12px;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (max-width: 600px) {
+  .header h1 {
+    font-size: 16px;
+  }
+
+  .header span {
+    display: none;
+  }
+
+  .control-box,
+  .check-box {
+    width: 160px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div id="app">
+
+<header class="header">
+  <h1>Coulomb's Law</h1>
+  <span>Interactive Electrostatics Simulation</span>
+</header>
+
+<section id="simulation">
+  <canvas id="scene" width="1000" height="600"></canvas>
+</section>
+
+<div class="controls">
+
+  <div class="control-box">
+    <h3>Charge 1</h3>
+
+    <div class="charge-buttons">
+      <button id="q1minus">−</button>
+      <div class="amount" id="q1Text">-4 μC</div>
+      <button id="q1plus">+</button>
+    </div>
+
+    <input id="q1" type="range" min="-10" max="10" step="1" value="-4" aria-label="Charge 1">
+
+    <div class="range-labels">
+      <span>-10</span>
+      <span>0</span>
+      <span>10</span>
+    </div>
+  </div>
+
+  <div class="control-box optional" id="charge3Control">
+    <h3>Charge 3</h3>
+
+    <div class="charge-buttons">
+      <button id="q3minus" aria-label="Decrease Charge 3">−</button>
+      <div class="amount" id="q3Text">4 μC</div>
+      <button id="q3plus" aria-label="Increase Charge 3">+</button>
+    </div>
+
+    <input id="q3" type="range" min="-10" max="10" step="1" value="4" aria-label="Charge 3">
+
+    <div class="range-labels">
+      <span>-10</span>
+      <span>0</span>
+      <span>10</span>
+    </div>
+  </div>
+
+  <div class="control-box">
+    <h3>Charge 2</h3>
+
+    <div class="charge-buttons">
+      <button id="q2minus">−</button>
+      <div class="amount" id="q2Text">8 μC</div>
+      <button id="q2plus">+</button>
+    </div>
+
+    <input id="q2" type="range" min="-10" max="10" step="1" value="8" aria-label="Charge 2">
+
+    <div class="range-labels">
+      <span>-10</span>
+      <span>0</span>
+      <span>10</span>
+    </div>
+  </div>
+
+  <div class="check-box">
+
+    <label>
+      <input type="checkbox" id="showForce" checked>
+      Force Values
+    </label>
+
+    <label>
+      <input type="checkbox" id="scientific">
+      Scientific Notation
+    </label>
+
+  </div>
+
+</div>
+
+<div class="actions">
+  <button id="addCharge">Add Charge 3</button>
+  <button id="measure">Measure distance</button>
+  <button id="reset" class="secondary">Reset simulation</button>
+</div>
+
+<div class="measurement">
+  <h2>Measurement and Coulomb's Law</h2>
+
+  <p>
+    Measured distance:
+    <strong id="measuredDistance">Not measured</strong>
+  </p>
+
+  <p>
+    Horizontal separation:
+    <strong id="horizontalDistance">—</strong>
+  </p>
+
+  <p>
+    Vertical separation:
+    <strong id="verticalDistance">—</strong>
+  </p>
+
+  <p>
+    Electrostatic force:
+    <strong id="forceValue">—</strong>
+  </p>
+
+  <p>
+    Net force on q₁:
+    <strong id="netForceOne">—</strong>
+  </p>
+
+  <p>
+    Net force on q₂:
+    <strong id="netForceTwo">—</strong>
+  </p>
+
+  <p id="netForceThreeRow" hidden>
+    Net force on q₃:
+    <strong id="netForceThree">—</strong>
+  </p>
+
+  <p>
+    Force type:
+    <strong id="forceType">—</strong>
+  </p>
+
+  <p id="formulaText">
+    F = k |q₁q₂| / r²
+  </p>
+</div>
+
+<div class="bottom">
+  <span>Grade 11 Physics • Coulomb's Law</span>
+  <span>k = 9 × 10⁹ N·m²/C²</span>
+</div>
+
+</div>
+
+<script>
+
+const canvas = document.getElementById("scene");
+const ctx = canvas.getContext("2d");
+
+const q1Slider = document.getElementById("q1");
+const q2Slider = document.getElementById("q2");
+const q3Slider = document.getElementById("q3");
+
+const q1Text = document.getElementById("q1Text");
+const q2Text = document.getElementById("q2Text");
+const q3Text = document.getElementById("q3Text");
+const charge3Control = document.getElementById("charge3Control");
+const addChargeButton = document.getElementById("addCharge");
+
+const showForce = document.getElementById("showForce");
+const scientific = document.getElementById("scientific");
+const measuredDistance = document.getElementById("measuredDistance");
+const horizontalDistance = document.getElementById("horizontalDistance");
+const verticalDistance = document.getElementById("verticalDistance");
+const forceValue = document.getElementById("forceValue");
+const forceType = document.getElementById("forceType");
+const netForceOne = document.getElementById("netForceOne");
+const netForceTwo = document.getElementById("netForceTwo");
+const netForceThree = document.getElementById("netForceThree");
+const netForceThreeRow = document.getElementById("netForceThreeRow");
+
+const K = 9e9;
+
+// Charge values in microcoulombs
+let q1 = -4;
+let q2 = 8;
+let q3 = 4;
+let charge3Active = false;
+
+// Charge positions
+let charge1 = {
+  x: 350,
+  y: 270
+};
+
+let charge2 = {
+  x: 650,
+  y: 350
+};
+
+let charge3 = {
+  x: 500,
+  y: 180
+};
+
+// Ruler position and size
+let ruler = {
+  x: 500,
+  y: 500,
+  width: 500,
+  height: 50
+};
+
+const radius = 42;
+
+let dragging = null;
+let pointerOffsetX = 0;
+let pointerOffsetY = 0;
+
+// Last manually measured distance
+let lastMeasurement = null;
+
+// Convert canvas distance to metres.
+// Here 100 canvas pixels = 1 metre.
+const PIXELS_PER_METRE = 100;
+const RULER_CENTIMETERS = 11;
+const RULER_VISUAL_SCALE = 1.05;
+
+function pixelsPerCentimeter() {
+  return ruler.width * RULER_VISUAL_SCALE / RULER_CENTIMETERS;
+}
+
+
+// -------------------------------
+// Formatting
+// -------------------------------
+
+function formatCharge(q) {
+  if (q > 0) return "+" + q + " μC";
+  return q + " μC";
+}
+
+function formatForce(value) {
+
+  if (scientific.checked) {
+    if (value === 0) return "0 N";
+    return value.toExponential(3) + " N";
+  }
+
+  return value.toFixed(4) + " N";
+}
+
+
+// -------------------------------
+// Coulomb's law
+// -------------------------------
+
+function calculateDistance() {
+
+  const dx = charge2.x - charge1.x;
+  const dy = charge2.y - charge1.y;
+
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+function calculateForce() {
+
+  const distancePixels = calculateDistance();
+
+  const distanceMetres = distancePixels / PIXELS_PER_METRE;
+
+  if (distanceMetres === 0) return 0;
+
+  return K *
+    Math.abs(q1 * 1e-6 * q2 * 1e-6) /
+    (distanceMetres * distanceMetres);
+}
+
+function calculatePairForce(firstCharge, firstValue, secondCharge, secondValue) {
+
+  const dx = secondCharge.x - firstCharge.x;
+  const dy = secondCharge.y - firstCharge.y;
+  const distanceMetres = Math.sqrt(dx * dx + dy * dy) / PIXELS_PER_METRE;
+
+  if (distanceMetres === 0) return 0;
+
+  return K *
+    Math.abs(firstValue * 1e-6 * secondValue * 1e-6) /
+    (distanceMetres * distanceMetres);
+}
+
+
+// -------------------------------
+// Charge appearance
+// -------------------------------
+
+function chargeColor(q) {
+
+  if (q > 0) return "#9999ff";
+
+  if (q < 0) return "#ff5555";
+
+  return "#aaaaaa";
+}
+
+function chargeEdgeColor(q) {
+
+  if (q > 0) return "#5d62aa";
+
+  if (q < 0) return "#a9363f";
+
+  return "#737373";
+}
+
+function drawCharge(charge, q, label) {
+
+  const color = chargeColor(q);
+  const edgeColor = chargeEdgeColor(q);
+
+  // Directional shading gives the charge a 3D spherical surface.
+  const sphereGradient = ctx.createRadialGradient(
+    charge.x - radius * 0.35,
+    charge.y - radius * 0.35,
+    radius * 0.08,
+    charge.x,
+    charge.y,
+    radius * 1.05
+  );
+  sphereGradient.addColorStop(0, color);
+  sphereGradient.addColorStop(0.62, color);
+  sphereGradient.addColorStop(1, edgeColor);
+
+  ctx.beginPath();
+  ctx.arc(charge.x, charge.y, radius, 0, Math.PI * 2);
+  ctx.fillStyle = sphereGradient;
+  ctx.fill();
+
+  // Center point marks the charge while the sphere color shows its polarity.
+  ctx.beginPath();
+  ctx.arc(charge.x, charge.y, 7, 0, Math.PI * 2);
+  ctx.fillStyle = "#111";
+  ctx.fill();
+
+  const centerLineLength = radius * 0.6;
+  ctx.beginPath();
+  ctx.moveTo(charge.x, charge.y - centerLineLength);
+  ctx.lineTo(charge.x, charge.y + centerLineLength);
+  ctx.strokeStyle = "#111";
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Label
+  ctx.fillStyle = "#ddd";
+  ctx.font = "15px Arial";
+  ctx.fillText(
+    label + " = " + formatCharge(q),
+    charge.x,
+    charge.y + 65
+  );
+}
+
+function drawCharacter(charge, side) {
+
+  const direction = side === "left" ? 1 : -1;
+  const characterSize = radius * 2 * 1.1;
+  const handDistance = pixelsPerCentimeter() * 2;
+  const handX = charge.x - direction * (radius + handDistance);
+  const x = handX - direction * characterSize * 0.383;
+  const y = charge.y + characterSize * 0.19;
+  const stickColor = "#9aa0a8";
+  const jointColors = ["#3d8bff", "#ffffff", "#e88732"];
+  const jointRadius = characterSize * 0.05;
+  const headRadius = characterSize * 0.083;
+  const otherCharges = charge === charge1
+    ? [{ charge: charge2, value: q2 }].concat(charge3Active ? [{ charge: charge3, value: q3 }] : [])
+    : charge === charge2
+      ? [{ charge: charge1, value: q1 }].concat(charge3Active ? [{ charge: charge3, value: q3 }] : [])
+      : [{ charge: charge1, value: q1 }, { charge: charge2, value: q2 }];
+  const appliedForce = calculateNetForceMagnitude(charge, charge === charge1 ? q1 : charge === charge2 ? q2 : q3, otherCharges);
+  const closestGapCm = otherCharges.length === 0 ? Infinity : Math.min(...otherCharges.map(source => {
+    const dx = charge.x - source.charge.x;
+    const dy = charge.y - source.charge.y;
+    const centerDistance = Math.sqrt(dx * dx + dy * dy);
+    return Math.max(0, centerDistance - radius * 2) / pixelsPerCentimeter();
+  }));
+  const forceKneeBend = Math.min(1, appliedForce / (appliedForce + 180));
+  const proximityKneeBend = closestGapCm <= 2 ? 1 : 0;
+  const kneeBend = Math.max(forceKneeBend, proximityKneeBend);
+  const kneeDrop = characterSize * 0.22 * kneeBend;
+  const stanceWidth = characterSize * 0.12 * kneeBend;
+  const torsoLean = direction * characterSize * 0.16 * kneeBend;
+  const hipLean = direction * characterSize * 0.03 * kneeBend;
+  const shoulder = { x: x + torsoLean, y: y - characterSize * 0.2 + kneeDrop * 0.18 };
+  const hip = { x: x - direction * characterSize * 0.033 + hipLean, y: y + characterSize * 0.1 + kneeDrop * 0.18 };
+  const nearElbow = { x: x + direction * characterSize * 0.233 + torsoLean * 0.35, y: y - characterSize * 0.133 };
+  const nearHand = { x: handX, y: charge.y - 3 };
+  const farElbow = { x: x - direction * characterSize * 0.167 + torsoLean * 0.3, y: y - characterSize * 0.033 };
+  const farHand = { x: handX, y: charge.y + 3 };
+  const nearKnee = { x: x + direction * (characterSize * 0.12 + stanceWidth), y: y + characterSize * 0.36 + kneeDrop };
+  const farKnee = { x: x - direction * (characterSize * 0.11 + stanceWidth * 0.6), y: y + characterSize * 0.37 + kneeDrop * 1.08 };
+  const thighLength = Math.hypot(nearKnee.x - hip.x, nearKnee.y - hip.y);
+  const shinLength = thighLength * (1 - kneeBend * 0.4);
+  const kneeToHip = { x: hip.x - nearKnee.x, y: hip.y - nearKnee.y };
+  const perpendicularOptions = [
+    { x: -kneeToHip.y / thighLength, y: kneeToHip.x / thighLength },
+    { x: kneeToHip.y / thighLength, y: -kneeToHip.x / thighLength }
+  ];
+  const perpendicularShin = perpendicularOptions[0].y > perpendicularOptions[1].y
+    ? perpendicularOptions[0]
+    : perpendicularOptions[1];
+  const uprightShin = { x: direction * 0.015, y: 1 };
+  const shinDirection = {
+    x: uprightShin.x * (1 - kneeBend) + perpendicularShin.x * kneeBend,
+    y: uprightShin.y * (1 - kneeBend) + perpendicularShin.y * kneeBend
+  };
+  const shinDirectionLength = Math.hypot(shinDirection.x, shinDirection.y) || 1;
+  const nearFoot = {
+    x: nearKnee.x + shinDirection.x / shinDirectionLength * shinLength,
+    y: nearKnee.y + shinDirection.y / shinDirectionLength * shinLength
+  };
+  const farFoot = { x: x - direction * (characterSize * 0.31 + stanceWidth * 1.45), y: y + characterSize * 0.5 + kneeDrop * 0.45 };
+
+  ctx.save();
+  const rearStickColor = "#626a73";
+  const frontStickColor = "#c5cbd1";
+  ctx.strokeStyle = rearStickColor;
+  ctx.fillStyle = jointColors[0];
+  ctx.lineWidth = characterSize * 0.05;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+
+  // A 2 cm connector represents the object being pushed by both hands.
+  ctx.beginPath();
+  ctx.moveTo(charge.x - direction * radius, charge.y);
+  ctx.lineTo(handX, charge.y);
+  ctx.strokeStyle = "#b8bec6";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Stick body and segmented limbs.
+  ctx.strokeStyle = rearStickColor;
+  ctx.lineWidth = characterSize * 0.045;
+  ctx.beginPath();
+  ctx.moveTo(shoulder.x, shoulder.y + 2);
+  ctx.lineTo(farElbow.x, farElbow.y);
+  ctx.lineTo(farHand.x, farHand.y);
+  ctx.moveTo(hip.x, hip.y);
+  ctx.lineTo(nearKnee.x, nearKnee.y);
+  ctx.lineTo(nearFoot.x, nearFoot.y);
+  ctx.moveTo(hip.x, hip.y);
+  ctx.lineTo(farKnee.x, farKnee.y);
+  ctx.lineTo(farFoot.x, farFoot.y);
+  ctx.stroke();
+
+  ctx.strokeStyle = frontStickColor;
+  ctx.lineWidth = characterSize * 0.06;
+  ctx.beginPath();
+  ctx.moveTo(shoulder.x, shoulder.y);
+  ctx.lineTo(hip.x, hip.y);
+  ctx.moveTo(shoulder.x, shoulder.y);
+  ctx.lineTo(nearElbow.x, nearElbow.y);
+  ctx.lineTo(nearHand.x, nearHand.y);
+  ctx.moveTo(hip.x, hip.y);
+  ctx.lineTo(nearKnee.x, nearKnee.y);
+  ctx.lineTo(nearFoot.x, nearFoot.y);
+  ctx.stroke();
+
+  // Joint circles create the atomic-bond-like body structure.
+  function drawJoint(joint, jointSize, color) {
+    const jointGradient = ctx.createRadialGradient(
+      joint.x - jointSize * 0.35,
+      joint.y - jointSize * 0.35,
+      jointSize * 0.1,
+      joint.x,
+      joint.y,
+      jointSize
+    );
+    jointGradient.addColorStop(0, "#ffffff");
+    jointGradient.addColorStop(0.3, color);
+    jointGradient.addColorStop(1, "#30363d");
+    ctx.beginPath();
+    ctx.arc(joint.x, joint.y, jointSize, 0, Math.PI * 2);
+    ctx.fillStyle = jointGradient;
+    ctx.fill();
+  }
+
+  drawJoint({ x: x + torsoLean * 1.08, y: y - characterSize * 0.35 + kneeDrop * 0.18 }, headRadius, jointColors[0]);
+  [shoulder, hip, nearElbow, nearHand, farElbow, farHand, nearKnee, farKnee].forEach((joint, index) => {
+    drawJoint(joint, jointRadius, jointColors[(index + 1) % jointColors.length]);
+  });
+
+  ctx.restore();
+}
+
+
+// -------------------------------
+// Force arrows
+// -------------------------------
+
+function drawArrow(x1, y1, x2, y2, color) {
+
+  const angle = Math.atan2(y2 - y1, x2 - x1);
+
+  const head = 14;
+
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.lineWidth = 4;
+
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.stroke();
+
+  ctx.beginPath();
+
+  ctx.moveTo(x2, y2);
+
+  ctx.lineTo(
+    x2 - head * Math.cos(angle - Math.PI / 6),
+    y2 - head * Math.sin(angle - Math.PI / 6)
+  );
+
+  ctx.lineTo(
+    x2 - head * Math.cos(angle + Math.PI / 6),
+    y2 - head * Math.sin(angle + Math.PI / 6)
+  );
+
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawForcePair(firstCharge, firstValue, secondCharge, secondValue) {
+
+  if (firstValue === 0 || secondValue === 0) return;
+
+  const dx = secondCharge.x - firstCharge.x;
+  const dy = secondCharge.y - firstCharge.y;
+  const distance = Math.sqrt(dx * dx + dy * dy);
+
+  if (distance === 0) return;
+
+  const ux = dx / distance;
+  const uy = dy / distance;
+  const sameSign = firstValue * secondValue > 0;
+  const force = calculatePairForce(firstCharge, firstValue, secondCharge, secondValue);
+  const length = Math.min(100, 30 + force * 0.1);
+  const direction = sameSign ? -1 : 1;
+
+  const start1 = {
+    x: firstCharge.x + ux * radius,
+    y: firstCharge.y + uy * radius
+  };
+
+  const start2 = {
+    x: secondCharge.x - ux * radius,
+    y: secondCharge.y - uy * radius
+  };
+
+  drawArrow(
+    start1.x,
+    start1.y,
+    start1.x + ux * length * direction,
+    start1.y + uy * length * direction,
+    "#bbbbbb"
+  );
+
+  drawArrow(
+    start2.x,
+    start2.y,
+    start2.x - ux * length * direction,
+    start2.y - uy * length * direction,
+    "#bbbbbb"
+  );
+}
+
+function calculateForceVector(targetCharge, targetValue, sourceCharge, sourceValue) {
+
+  const dx = targetCharge.x - sourceCharge.x;
+  const dy = targetCharge.y - sourceCharge.y;
+  const distance = Math.sqrt(dx * dx + dy * dy);
+
+  if (distance === 0 || targetValue === 0 || sourceValue === 0) {
+    return { x: 0, y: 0 };
+  }
+
+  const magnitude = calculatePairForce(targetCharge, targetValue, sourceCharge, sourceValue);
+  const direction = targetValue * sourceValue > 0 ? 1 : -1;
+
+  return {
+    x: dx / distance * magnitude * direction,
+    y: dy / distance * magnitude * direction
+  };
+}
+
+function calculateNetForceVector(targetCharge, targetValue, sources) {
+
+  return sources.reduce((total, source) => {
+    const force = calculateForceVector(targetCharge, targetValue, source.charge, source.value);
+    return { x: total.x + force.x, y: total.y + force.y };
+  }, { x: 0, y: 0 });
+}
+
+function calculateNetForceMagnitude(targetCharge, targetValue, sources) {
+
+  const netForce = calculateNetForceVector(targetCharge, targetValue, sources);
+
+  return Math.sqrt(netForce.x * netForce.x + netForce.y * netForce.y);
+}
+
+function drawNetForce(targetCharge, targetValue, sources) {
+
+  const netForce = calculateNetForceVector(targetCharge, targetValue, sources);
+
+  const magnitude = Math.sqrt(netForce.x * netForce.x + netForce.y * netForce.y);
+
+  if (magnitude === 0) return;
+
+  const ux = netForce.x / magnitude;
+  const uy = netForce.y / magnitude;
+  const length = Math.min(120, 35 + magnitude * 0.1);
+
+  drawArrow(
+    targetCharge.x + ux * radius,
+    targetCharge.y + uy * radius,
+    targetCharge.x + ux * (radius + length),
+    targetCharge.y + uy * (radius + length),
+    "#ffd45a"
+  );
+
+  ctx.fillStyle = "#ffd45a";
+  ctx.font = "14px Arial";
+  ctx.textAlign = "center";
+  ctx.fillText(
+    "Net force on q₃ = " + formatForce(magnitude),
+    targetCharge.x,
+    targetCharge.y - 65
+  );
+}
+
+function drawForceArrows() {
+
+  if (!showForce.checked) return;
+
+  drawForcePair(charge1, q1, charge2, q2);
+
+  if (charge3Active) {
+    drawForcePair(charge1, q1, charge3, q3);
+    drawForcePair(charge2, q2, charge3, q3);
+  }
+
+  const force = calculateForce();
+
+  ctx.fillStyle = "#ddd";
+  ctx.font = "14px Arial";
+  ctx.textAlign = "center";
+
+  ctx.fillText(
+    "Force on q₁ by q₂ = " + formatForce(force),
+    charge1.x,
+    charge1.y - 65
+  );
+
+  ctx.fillText(
+    "Force on q₂ by q₁ = " + formatForce(force),
+    charge2.x,
+    charge2.y - 65
+  );
+
+  if (charge3Active) {
+    const forceOnOneByThree = calculatePairForce(charge1, q1, charge3, q3);
+    const forceOnTwoByThree = calculatePairForce(charge2, q2, charge3, q3);
+    const forceOnThreeByOne = calculatePairForce(charge3, q3, charge1, q1);
+    const forceOnThreeByTwo = calculatePairForce(charge3, q3, charge2, q2);
+
+    ctx.fillText(
+      "Force on q₁ by q₃ = " + formatForce(forceOnOneByThree),
+      charge1.x,
+      charge1.y - 48
+    );
+
+    ctx.fillText(
+      "Force on q₂ by q₃ = " + formatForce(forceOnTwoByThree),
+      charge2.x,
+      charge2.y - 48
+    );
+
+    ctx.fillText(
+      "Force on q₃ by q₁ = " + formatForce(forceOnThreeByOne),
+      charge3.x,
+      charge3.y - 48
+    );
+
+    ctx.fillText(
+      "Force on q₃ by q₂ = " + formatForce(forceOnThreeByTwo),
+      charge3.x,
+      charge3.y - 31
+    );
+
+    drawNetForce(charge3, q3, [
+      { charge: charge1, value: q1 },
+      { charge: charge2, value: q2 }
+    ]);
+  }
+}
+
+
+// -------------------------------
+// Free-moving ruler
+// -------------------------------
+
+function drawRuler() {
+
+  const rulerVisualWidth = ruler.width * 1.05;
+  const x = ruler.x - rulerVisualWidth / 2;
+  const y = ruler.y - ruler.height / 2;
+
+  // Ruler body
+  ctx.fillStyle = "#e6e6e6";
+  ctx.fillRect(x, y, rulerVisualWidth, ruler.height);
+
+  ctx.strokeStyle = "#777";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(x, y, rulerVisualWidth, ruler.height);
+
+  // Ruler markings
+  ctx.strokeStyle = "#222";
+  ctx.fillStyle = "#222";
+  ctx.font = "12px Arial";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  const rulerStart = 0;
+  const rulerEnd = 11;
+  const rulerRange = rulerEnd - rulerStart;
+
+  for (let i = rulerStart; i <= rulerEnd; i++) {
+
+    const markX = x + ((i - rulerStart) / rulerRange) * rulerVisualWidth;
+    const isZero = i === 0;
+    const isLabel = i >= 0 && i <= 11;
+
+    ctx.beginPath();
+    ctx.moveTo(markX, y);
+    ctx.lineTo(markX, y + (isZero ? 29 : 23));
+    ctx.lineWidth = isZero ? 3 : 1;
+    ctx.stroke();
+
+    if (isLabel) {
+      ctx.textAlign = "center";
+      ctx.fillText(i, markX, y + 37);
+    }
+
+    for (let j = 1; j < 10 && i < rulerEnd; j++) {
+
+      const smallX =
+        markX + (j / 10) * (rulerVisualWidth / rulerRange);
+
+      ctx.beginPath();
+      ctx.moveTo(smallX, y);
+      ctx.lineTo(smallX, y + 10);
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+  }
+
+  // Ruler handle indicator
+  ctx.fillStyle = "#555";
+  ctx.font = "bold 11px Arial";
+  ctx.fillText(
+    "DRAG RULER",
+    ruler.x,
+    y - 10
+  );
+}
+
+function drawScale() {
+
+  const x = 55;
+  const y = canvas.height - 35;
+
+  ctx.strokeStyle = "#39ff65";
+  ctx.fillStyle = "#39ff65";
+  ctx.lineWidth = 2;
+  ctx.font = "13px Arial";
+  ctx.textAlign = "left";
+  ctx.textBaseline = "bottom";
+
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(x + 60, y);
+  ctx.moveTo(x, y - 5);
+  ctx.lineTo(x, y + 5);
+  ctx.moveTo(x + 60, y - 5);
+  ctx.lineTo(x + 60, y + 5);
+  ctx.stroke();
+
+  ctx.fillText("1 cm", x, y - 8);
+}
+
+
+// -------------------------------
+// Distance guide between charges
+// -------------------------------
+
+function drawDistanceGuide() {
+
+  ctx.strokeStyle = "#777";
+  ctx.lineWidth = 1;
+  ctx.setLineDash([5, 5]);
+
+  ctx.beginPath();
+  ctx.moveTo(charge1.x, charge1.y);
+  ctx.lineTo(charge2.x, charge2.y);
+  ctx.stroke();
+
+  ctx.setLineDash([]);
+
+  // Horizontal separation
+  ctx.strokeStyle = "#555";
+  ctx.beginPath();
+  ctx.moveTo(charge1.x, charge1.y);
+  ctx.lineTo(charge2.x, charge1.y);
+  ctx.stroke();
+
+  // Vertical separation
+  ctx.beginPath();
+  ctx.moveTo(charge2.x, charge1.y);
+  ctx.lineTo(charge2.x, charge2.y);
+  ctx.stroke();
+}
+
+
+// -------------------------------
+// Draw everything
+// -------------------------------
+
+function draw() {
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  drawDistanceGuide();
+
+  drawCharacter(charge1, "left");
+  drawCharacter(charge2, "right");
+
+  if (charge3Active) {
+    drawCharacter(charge3, charge3.x < canvas.width / 2 ? "left" : "right");
+  }
+
+  drawForceArrows();
+
+  drawCharge(charge1, q1, "q₁");
+
+  drawCharge(charge2, q2, "q₂");
+
+  if (charge3Active) {
+    drawCharge(charge3, q3, "q₃");
+  }
+
+  drawRuler();
+
+  drawScale();
+}
+
+
+// -------------------------------
+// Update values
+// -------------------------------
+
+function update() {
+
+  q1 = Number(q1Slider.value);
+  q2 = Number(q2Slider.value);
+  q3 = Number(q3Slider.value);
+
+  q1Text.textContent = formatCharge(q1);
+  q2Text.textContent = formatCharge(q2);
+  q3Text.textContent = formatCharge(q3);
+
+  const sourcesForOne = [
+    { charge: charge2, value: q2 }
+  ];
+  const sourcesForTwo = [
+    { charge: charge1, value: q1 }
+  ];
+
+  if (charge3Active) {
+    sourcesForOne.push({ charge: charge3, value: q3 });
+    sourcesForTwo.push({ charge: charge3, value: q3 });
+  }
+
+  const netForceOnOne = calculateNetForceMagnitude(charge1, q1, sourcesForOne);
+  const netForceOnTwo = calculateNetForceMagnitude(charge2, q2, sourcesForTwo);
+  const force = charge3Active ? netForceOnOne : calculateForce();
+
+  forceValue.textContent = formatForce(force);
+  netForceOne.textContent = formatForce(netForceOnOne);
+  netForceTwo.textContent = formatForce(netForceOnTwo);
+  netForceThreeRow.hidden = !charge3Active;
+
+  if (charge3Active) {
+    netForceThree.textContent = formatForce(calculateNetForceMagnitude(charge3, q3, [
+      { charge: charge1, value: q1 },
+      { charge: charge2, value: q2 }
+    ]));
+  }
+
+  if (q1 === 0 || q2 === 0) {
+
+    forceType.textContent = "No electrostatic force";
+
+  } else if (q1 * q2 > 0) {
+
+    forceType.textContent = "Repulsion";
+
+  } else {
+
+    forceType.textContent = "Attraction";
+  }
+
+  draw();
+}
+
+
+// -------------------------------
+// Manual measurement
+// -------------------------------
+
+function measureDistance() {
+
+  const dx = Math.abs(charge2.x - charge1.x);
+
+  const dy = Math.abs(charge2.y - charge1.y);
+
+  const distancePixels = Math.sqrt(
+    dx * dx + dy * dy
+  );
+
+  const distanceMetres =
+    distancePixels / PIXELS_PER_METRE;
+
+  lastMeasurement = distanceMetres;
+
+  measuredDistance.textContent =
+    (distanceMetres * 100).toFixed(2) + " cm";
+
+  horizontalDistance.textContent =
+    (dx / PIXELS_PER_METRE * 100).toFixed(2) + " cm";
+
+  verticalDistance.textContent =
+    (dy / PIXELS_PER_METRE * 100).toFixed(2) + " cm";
+}
+
+
+// -------------------------------
+// Change charges
+// -------------------------------
+
+function changeCharge(slider, amount) {
+
+  let value = Number(slider.value) + amount;
+
+  value = Math.max(-10, Math.min(10, value));
+
+  slider.value = value;
+
+  update();
+}
+
+document.getElementById("q1minus").addEventListener(
+  "click",
+  () => changeCharge(q1Slider, -1)
+);
+
+document.getElementById("q1plus").addEventListener(
+  "click",
+  () => changeCharge(q1Slider, 1)
+);
+
+document.getElementById("q2minus").addEventListener(
+  "click",
+  () => changeCharge(q2Slider, -1)
+);
+
+document.getElementById("q2plus").addEventListener(
+  "click",
+  () => changeCharge(q2Slider, 1)
+);
+
+q1Slider.addEventListener("input", update);
+q2Slider.addEventListener("input", update);
+q3Slider.addEventListener("input", update);
+
+showForce.addEventListener("change", draw);
+scientific.addEventListener("change", draw);
+document.getElementById("measure").addEventListener(
+  "click",
+  measureDistance
+);
+
+function changeCharge3(amount) {
+
+  q3Slider.value = Math.max(-10, Math.min(10, Number(q3Slider.value) + amount));
+
+  update();
+}
+
+document.getElementById("q3minus").addEventListener(
+  "click",
+  () => changeCharge3(-1)
+);
+
+document.getElementById("q3plus").addEventListener(
+  "click",
+  () => changeCharge3(1)
+);
+
+addChargeButton.addEventListener("click", () => {
+
+  charge3Active = !charge3Active;
+  charge3Control.classList.toggle("active", charge3Active);
+  addChargeButton.textContent = charge3Active ? "Remove Charge 3" : "Add Charge 3";
+  update();
+});
+
+
+// -------------------------------
+// Reset
+// -------------------------------
+
+document.getElementById("reset").addEventListener(
+  "click",
+  () => {
+
+    q1Slider.value = -4;
+    q2Slider.value = 8;
+    q3Slider.value = 4;
+    charge3Active = false;
+    charge3Control.classList.remove("active");
+    addChargeButton.textContent = "Add Charge 3";
+
+    charge1.x = 350;
+    charge1.y = 270;
+
+    charge2.x = 650;
+    charge2.y = 350;
+
+    charge3.x = 500;
+    charge3.y = 180;
+
+    ruler.x = 500;
+    ruler.y = 500;
+
+    lastMeasurement = null;
+
+    measuredDistance.textContent = "Not measured";
+    horizontalDistance.textContent = "—";
+    verticalDistance.textContent = "—";
+
+    update();
+  }
+);
+
+
+// -------------------------------
+// Drag charges and ruler
+// -------------------------------
+
+function getPointerPosition(event) {
+
+  const rect = canvas.getBoundingClientRect();
+
+  return {
+    x: (event.clientX - rect.left) *
+       canvas.width / rect.width,
+
+    y: (event.clientY - rect.top) *
+       canvas.height / rect.height
+  };
+}
+
+canvas.addEventListener("pointerdown", event => {
+
+  const pos = getPointerPosition(event);
+
+  // Charge 1
+  if (
+    Math.hypot(
+      pos.x - charge1.x,
+      pos.y - charge1.y
+    ) < radius + 15
+  ) {
+
+    dragging = "q1";
+
+    pointerOffsetX = pos.x - charge1.x;
+    pointerOffsetY = pos.y - charge1.y;
+
+    canvas.setPointerCapture(event.pointerId);
+
+    return;
+  }
+
+  if (charge3Active && Math.hypot(
+    pos.x - charge3.x,
+    pos.y - charge3.y
+  ) < radius + 15) {
+
+    dragging = "q3";
+
+    pointerOffsetX = pos.x - charge3.x;
+    pointerOffsetY = pos.y - charge3.y;
+
+    canvas.setPointerCapture(event.pointerId);
+
+    return;
+  }
+
+  // Charge 2
+  if (
+    Math.hypot(
+      pos.x - charge2.x,
+      pos.y - charge2.y
+    ) < radius + 15
+  ) {
+
+    dragging = "q2";
+
+    pointerOffsetX = pos.x - charge2.x;
+    pointerOffsetY = pos.y - charge2.y;
+
+    canvas.setPointerCapture(event.pointerId);
+
+    return;
+  }
+
+  // Ruler
+  const rulerLeft = ruler.x - ruler.width / 2;
+  const rulerRight = ruler.x + ruler.width / 2;
+
+  const rulerTop = ruler.y - ruler.height / 2;
+  const rulerBottom = ruler.y + ruler.height / 2;
+
+  if (
+    pos.x >= rulerLeft &&
+    pos.x <= rulerRight &&
+    pos.y >= rulerTop &&
+    pos.y <= rulerBottom
+  ) {
+
+    dragging = "ruler";
+
+    pointerOffsetX = pos.x - ruler.x;
+    pointerOffsetY = pos.y - ruler.y;
+
+    canvas.setPointerCapture(event.pointerId);
+  }
+});
+
+canvas.addEventListener("pointermove", event => {
+
+  if (!dragging) return;
+
+  const pos = getPointerPosition(event);
+
+  if (dragging === "q1") {
+
+    charge1.x = Math.max(
+      radius,
+      Math.min(
+        canvas.width - radius,
+        pos.x - pointerOffsetX
+      )
+    );
+
+    charge1.y = Math.max(
+      radius,
+      Math.min(
+        canvas.height - radius,
+        pos.y - pointerOffsetY
+      )
+    );
+  }
+
+  if (dragging === "q2") {
+
+    charge2.x = Math.max(
+      radius,
+      Math.min(
+        canvas.width - radius,
+        pos.x - pointerOffsetX
+      )
+    );
+
+    charge2.y = Math.max(
+      radius,
+      Math.min(
+        canvas.height - radius,
+        pos.y - pointerOffsetY
+      )
+    );
+  }
+
+  if (dragging === "q3") {
+
+    charge3.x = Math.max(
+      radius,
+      Math.min(
+        canvas.width - radius,
+        pos.x - pointerOffsetX
+      )
+    );
+
+    charge3.y = Math.max(
+      radius,
+      Math.min(
+        canvas.height - radius,
+        pos.y - pointerOffsetY
+      )
+    );
+  }
+
+  if (dragging === "ruler") {
+
+    ruler.x = Math.max(
+      ruler.width / 2,
+      Math.min(
+        canvas.width - ruler.width / 2,
+        pos.x - pointerOffsetX
+      )
+    );
+
+    ruler.y = Math.max(
+      ruler.height / 2,
+      Math.min(
+        canvas.height - ruler.height / 2,
+        pos.y - pointerOffsetY
+      )
+    );
+  }
+
+  draw();
+});
+
+canvas.addEventListener("pointerup", () => {
+  dragging = null;
+});
+
+canvas.addEventListener("pointercancel", () => {
+  dragging = null;
+});
+
+update();
+
+</script>
+
+</body>
+</html>
