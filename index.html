@@ -305,6 +305,11 @@ body {
     </label>
 
     <label>
+      <input type="checkbox" id="showField">
+      Electric Fields
+    </label>
+
+    <label>
       <input type="checkbox" id="scientific">
       Scientific Notation
     </label>
@@ -390,6 +395,7 @@ const charge3Control = document.getElementById("charge3Control");
 const addChargeButton = document.getElementById("addCharge");
 
 const showForce = document.getElementById("showForce");
+const showField = document.getElementById("showField");
 const scientific = document.getElementById("scientific");
 const measuredDistance = document.getElementById("measuredDistance");
 const horizontalDistance = document.getElementById("horizontalDistance");
@@ -599,6 +605,11 @@ function drawCharacter(charge, side) {
       ? [{ charge: charge1, value: q1 }].concat(charge3Active ? [{ charge: charge3, value: q3 }] : [])
       : [{ charge: charge1, value: q1 }, { charge: charge2, value: q2 }];
   const appliedForce = calculateNetForceMagnitude(charge, charge === charge1 ? q1 : charge === charge2 ? q2 : q3, otherCharges);
+  const chargeValue = charge === charge1 ? q1 : charge === charge2 ? q2 : q3;
+  const hasRepellingSource = otherCharges.some(source =>
+    source.value !== 0 && chargeValue * source.value > 0
+  );
+  const connectorCut = hasRepellingSource ? handDistance * 0.15 : 0;
   const closestGapCm = otherCharges.length === 0 ? Infinity : Math.min(...otherCharges.map(source => {
     const dx = charge.x - source.charge.x;
     const dy = charge.y - source.charge.y;
@@ -653,7 +664,7 @@ function drawCharacter(charge, side) {
 
   // A 2 cm connector represents the object being pushed by both hands.
   ctx.beginPath();
-  ctx.moveTo(charge.x - direction * radius, charge.y);
+  ctx.moveTo(charge.x - direction * (radius + connectorCut), charge.y);
   ctx.lineTo(handX, charge.y);
   ctx.strokeStyle = "#b8bec6";
   ctx.lineWidth = 2;
@@ -766,34 +777,168 @@ function drawForcePair(firstCharge, firstValue, secondCharge, secondValue) {
   const uy = dy / distance;
   const sameSign = firstValue * secondValue > 0;
   const force = calculatePairForce(firstCharge, firstValue, secondCharge, secondValue);
-  const length = Math.min(100, 30 + force * 0.1);
-  const direction = sameSign ? -1 : 1;
+  const length = sameSign
+    ? Math.min(50, 32 + force * 0.05)
+    : Math.min(100, 30 + force * 0.1);
+  const firstDirection = sameSign ? -1 : 1;
+  const secondDirection = -firstDirection;
 
   const start1 = {
-    x: firstCharge.x + ux * radius,
-    y: firstCharge.y + uy * radius
+    x: firstCharge.x + ux * radius * firstDirection,
+    y: firstCharge.y + uy * radius * firstDirection
   };
 
   const start2 = {
-    x: secondCharge.x - ux * radius,
-    y: secondCharge.y - uy * radius
+    x: secondCharge.x + ux * radius * secondDirection,
+    y: secondCharge.y + uy * radius * secondDirection
+  };
+
+  const end1 = {
+    x: start1.x + ux * length * firstDirection,
+    y: start1.y + uy * length * firstDirection
+  };
+
+  const end2 = {
+    x: start2.x + ux * length * secondDirection,
+    y: start2.y + uy * length * secondDirection
   };
 
   drawArrow(
     start1.x,
     start1.y,
-    start1.x + ux * length * direction,
-    start1.y + uy * length * direction,
+    end1.x,
+    end1.y,
     "#bbbbbb"
   );
 
   drawArrow(
     start2.x,
     start2.y,
-    start2.x - ux * length * direction,
-    start2.y - uy * length * direction,
+    end2.x,
+    end2.y,
     "#bbbbbb"
   );
+}
+
+function calculateElectricFieldAtPoint(x, y, sources) {
+
+  return sources.reduce((total, source) => {
+    const dx = x - source.charge.x;
+    const dy = y - source.charge.y;
+    const distanceSquared = dx * dx + dy * dy;
+
+    if (distanceSquared === 0 || source.value === 0) return total;
+
+    const distanceMetres = Math.sqrt(distanceSquared) / PIXELS_PER_METRE;
+    const fieldMagnitude = K * Math.abs(source.value * 1e-6) /
+      (distanceMetres * distanceMetres);
+    const direction = source.value > 0 ? 1 : -1;
+    const distance = Math.sqrt(distanceSquared);
+
+    return {
+      x: total.x + dx / distance * fieldMagnitude * direction,
+      y: total.y + dy / distance * fieldMagnitude * direction
+    };
+  }, { x: 0, y: 0 });
+}
+
+function traceElectricFieldLine(startX, startY, direction, sources) {
+
+  const points = [{ x: startX, y: startY }];
+  let x = startX;
+  let y = startY;
+
+  for (let step = 0; step < 180; step++) {
+    const field = calculateElectricFieldAtPoint(x, y, sources);
+    const magnitude = Math.sqrt(field.x * field.x + field.y * field.y);
+
+    if (magnitude < 0.001) break;
+
+    const ux = field.x / magnitude * direction;
+    const uy = field.y / magnitude * direction;
+    const stepSize = 5;
+    const nextX = x + ux * stepSize;
+    const nextY = y + uy * stepSize;
+
+    if (nextX < 0 || nextX > canvas.width || nextY < 0 || nextY > canvas.height) break;
+
+    const reachedCharge = sources.some(source => {
+      const sourceDistance = Math.hypot(nextX - source.charge.x, nextY - source.charge.y);
+      return sourceDistance <= radius + 4;
+    });
+
+    points.push({ x: nextX, y: nextY });
+    x = nextX;
+    y = nextY;
+
+    if (reachedCharge) break;
+  }
+
+  return points;
+}
+
+function drawElectricFieldLine(points) {
+
+  if (points.length < 3) return;
+
+  ctx.strokeStyle = "#4dd0e1";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(points[0].x, points[0].y);
+
+  points.slice(1).forEach(point => ctx.lineTo(point.x, point.y));
+
+  ctx.stroke();
+
+  const arrowIndex = Math.floor(points.length * 0.58);
+  const arrowStart = points[Math.max(0, arrowIndex - 4)];
+  const arrowEnd = points[Math.min(points.length - 1, arrowIndex + 4)];
+
+  drawArrow(
+    arrowStart.x,
+    arrowStart.y,
+    arrowEnd.x,
+    arrowEnd.y,
+    "#4dd0e1"
+  );
+}
+
+function drawElectricFieldPair(firstCharge, firstValue, secondCharge, secondValue) {
+
+  if (firstValue === 0 && secondValue === 0) return;
+
+  const sources = [
+    { charge: firstCharge, value: firstValue },
+    { charge: secondCharge, value: secondValue }
+  ];
+  const positiveSources = sources.filter(source => source.value > 0);
+  const negativeSources = sources.filter(source => source.value < 0);
+  const fieldLineSources = positiveSources.length > 0 ? positiveSources : negativeSources;
+  const direction = positiveSources.length > 0 ? 1 : -1;
+  const lineCount = 10;
+
+  fieldLineSources.forEach(source => {
+    for (let index = 0; index < lineCount; index++) {
+      const angle = (Math.PI * 2 * index) / lineCount;
+      const startX = source.charge.x + Math.cos(angle) * (radius + 5);
+      const startY = source.charge.y + Math.sin(angle) * (radius + 5);
+      const points = traceElectricFieldLine(startX, startY, direction, sources);
+
+      drawElectricFieldLine(points);
+    }
+  });
+}
+
+function drawElectricFieldArrows() {
+
+  if (!showField.checked) return;
+
+  drawElectricFieldPair(charge1, q1, charge2, q2);
+
+  if (charge3Active) {
+    drawElectricFieldPair(charge1, q1, charge3, q3);
+    drawElectricFieldPair(charge2, q2, charge3, q3);
+  }
 }
 
 function calculateForceVector(targetCharge, targetValue, sourceCharge, sourceValue) {
@@ -1070,6 +1215,7 @@ function draw() {
     drawCharacter(charge3, charge3.x < canvas.width / 2 ? "left" : "right");
   }
 
+  drawElectricFieldArrows();
   drawForceArrows();
 
   drawCharge(charge1, q1, "q₁");
@@ -1215,6 +1361,7 @@ q2Slider.addEventListener("input", update);
 q3Slider.addEventListener("input", update);
 
 showForce.addEventListener("change", draw);
+showField.addEventListener("change", draw);
 scientific.addEventListener("change", draw);
 document.getElementById("measure").addEventListener(
   "click",
