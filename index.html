@@ -176,6 +176,30 @@ body {
   opacity: 0.85;
 }
 
+.measurement {
+  margin: 10px 15px 20px;
+  padding: 15px;
+  background: #202020;
+  border: 1px solid #444;
+  border-radius: 9px;
+}
+
+.measurement h2 {
+  font-size: 17px;
+  margin: 0 0 10px;
+  font-weight: normal;
+}
+
+.measurement p {
+  margin: 6px 0;
+  color: #ddd;
+  font-size: 14px;
+}
+
+.measurement strong {
+  color: #ffcc80;
+}
+
 .bottom {
   border-top: 1px solid #333;
   padding: 12px 16px;
@@ -296,7 +320,56 @@ body {
 
 <div class="actions">
   <button id="addCharge">Add Charge 3</button>
+  <button id="measure">Measure distance</button>
   <button id="reset" class="secondary">Reset simulation</button>
+</div>
+
+<div class="measurement">
+  <h2>Measurement and Coulomb's Law</h2>
+
+  <p>
+    Measured distance:
+    <strong id="measuredDistance">Not measured</strong>
+  </p>
+
+  <p>
+    Horizontal separation:
+    <strong id="horizontalDistance">—</strong>
+  </p>
+
+  <p>
+    Vertical separation:
+    <strong id="verticalDistance">—</strong>
+  </p>
+
+  <p>
+    Electrostatic force:
+    <strong id="forceValue">—</strong>
+  </p>
+
+  <p>
+    Net force on q₁:
+    <strong id="netForceOne">—</strong>
+  </p>
+
+  <p>
+    Net force on q₂:
+    <strong id="netForceTwo">—</strong>
+  </p>
+
+  <p id="netForceThreeRow" hidden>
+    Net force on q₃:
+    <strong id="netForceThree">—</strong>
+  </p>
+
+  <p>
+    Force type:
+    <strong id="forceType">—</strong>
+  </p>
+
+  <p id="formulaText">
+    F = k |q₁q₂| / r²
+  </p>
 </div>
 
 <div class="bottom">
@@ -324,6 +397,15 @@ const addChargeButton = document.getElementById("addCharge");
 const showForce = document.getElementById("showForce");
 const showField = document.getElementById("showField");
 const scientific = document.getElementById("scientific");
+const measuredDistance = document.getElementById("measuredDistance");
+const horizontalDistance = document.getElementById("horizontalDistance");
+const verticalDistance = document.getElementById("verticalDistance");
+const forceValue = document.getElementById("forceValue");
+const forceType = document.getElementById("forceType");
+const netForceOne = document.getElementById("netForceOne");
+const netForceTwo = document.getElementById("netForceTwo");
+const netForceThree = document.getElementById("netForceThree");
+const netForceThreeRow = document.getElementById("netForceThreeRow");
 
 const K = 9e9;
 
@@ -362,6 +444,8 @@ const radius = 42;
 let dragging = null;
 let pointerOffsetX = 0;
 let pointerOffsetY = 0;
+
+let lastMeasurement = null;
 
 // Convert canvas distance to metres.
 // Here 100 canvas pixels = 1 metre.
@@ -469,6 +553,7 @@ function drawCharge(charge, q, label) {
     charge.y,
     radius * 1.05
   );
+
   sphereGradient.addColorStop(0, color);
   sphereGradient.addColorStop(0.62, color);
   sphereGradient.addColorStop(1, edgeColor);
@@ -1161,7 +1246,52 @@ function update() {
   q2Text.textContent = formatCharge(q2);
   q3Text.textContent = formatCharge(q3);
 
+  const sourcesForOne = [{ charge: charge2, value: q2 }];
+  const sourcesForTwo = [{ charge: charge1, value: q1 }];
+
+  if (charge3Active) {
+    sourcesForOne.push({ charge: charge3, value: q3 });
+    sourcesForTwo.push({ charge: charge3, value: q3 });
+  }
+
+  const netForceOnOne = calculateNetForceMagnitude(charge1, q1, sourcesForOne);
+  const netForceOnTwo = calculateNetForceMagnitude(charge2, q2, sourcesForTwo);
+  const force = charge3Active ? netForceOnOne : calculateForce();
+
+  forceValue.textContent = formatForce(force);
+  netForceOne.textContent = formatForce(netForceOnOne);
+  netForceTwo.textContent = formatForce(netForceOnTwo);
+  netForceThreeRow.hidden = !charge3Active;
+
+  if (charge3Active) {
+    netForceThree.textContent = formatForce(calculateNetForceMagnitude(charge3, q3, [
+      { charge: charge1, value: q1 },
+      { charge: charge2, value: q2 }
+    ]));
+  }
+
+  if (q1 === 0 || q2 === 0) {
+    forceType.textContent = "No electrostatic force";
+  } else if (q1 * q2 > 0) {
+    forceType.textContent = "Repulsion";
+  } else {
+    forceType.textContent = "Attraction";
+  }
+
   draw();
+}
+
+function measureDistance() {
+
+  const dx = Math.abs(charge2.x - charge1.x);
+  const dy = Math.abs(charge2.y - charge1.y);
+  const distancePixels = Math.sqrt(dx * dx + dy * dy);
+  const distanceMetres = distancePixels / PIXELS_PER_METRE;
+
+  lastMeasurement = distanceMetres;
+  measuredDistance.textContent = (distanceMetres * 100).toFixed(2) + " cm";
+  horizontalDistance.textContent = (dx / PIXELS_PER_METRE * 100).toFixed(2) + " cm";
+  verticalDistance.textContent = (dy / PIXELS_PER_METRE * 100).toFixed(2) + " cm";
 }
 
 // -------------------------------
@@ -1206,6 +1336,7 @@ q3Slider.addEventListener("input", update);
 showForce.addEventListener("change", draw);
 showField.addEventListener("change", draw);
 scientific.addEventListener("change", draw);
+document.getElementById("measure").addEventListener("click", measureDistance);
 
 function changeCharge3(amount) {
 
@@ -1259,6 +1390,11 @@ document.getElementById("reset").addEventListener(
 
     ruler.x = 500;
     ruler.y = 500;
+
+    lastMeasurement = null;
+    measuredDistance.textContent = "Not measured";
+    horizontalDistance.textContent = "—";
+    verticalDistance.textContent = "—";
 
     update();
   }
